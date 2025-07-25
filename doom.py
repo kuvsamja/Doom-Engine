@@ -4,29 +4,100 @@ import math
 pygame.init()
 pygame.display.set_caption("doom")
 
+class Vec3():
+    def __init__(self, x=0, y=0, z=0):
+        self.e = [x, y, z]
+    def x(self):    return self.e[0]
+    def y(self):    return self.e[1]
+    def z(self):    return self.e[2]
+
+    def __neg__(self):  return vec3(-self.e[0], -self.e[1], -self.e[2])
+
+    # tvoj_vektor[index]
+    def __getitem__(self, i):  return self.e[i]
+    def __setitem__(self, i, value):    self.e[i] = value
+
+    def __iadd__(self, v):
+        self.e[0] += v.e[0]
+        self.e[1] += v.e[1]
+        self.e[2] += v.e[2]
+        return self
+    def __isub__(self, v):
+        self.e[0] -= v.e[0]
+        self.e[1] -= v.e[1]
+        self.e[2] -= v.e[2]
+    def __imul__(self, t):
+        self.e[0] *= t
+        self.e[1] *= t
+        self.e[2] *= t
+        return self
+    def __itruediv__(self, t):
+        self.e[0] /= t
+        self.e[1] /= t
+        self.e[2] /= t
+        return self
+    
+    def lenght(self):
+        return math.sqrt(self.x**2 + self.y**2 + self.z**2)
+    
+    def __add__(self, v):
+        return vec3(self.e[0] + v.e[0], self.e[1] + v.e[1], self.e[2] + v.e[2])
+    def __sub__(self, v):
+        return vec3(self.e[0] - v.e[0], self.e[1] - v.e[1], self.e[2] - v.e[2])
+    def __rmul__(self, t):
+        return vec3(self.e[0] * t, self.e[1] * t, self.e[2] * t)
+    def __truediv__(self, t):
+        return vec3(self.e[0] / t, self.e[1] / t, self.e[2] / t)
+    def dot(self, u, v):
+        return u.e[0]*v.e[0] + u.e[1]*v.e[1] + u.e[2]*v.e[2]
+    def cross(self, u, v):
+        return vec3(
+            u.e[1] * v.e[2] - u.e[2] * v.e[1],
+            u.e[2] * v.e[0] - u.e[0] * v.e[2],
+            u.e[0] * v.e[1] - u.e[1] * v.e[0]
+        )
+    def unit_vector(self, v):
+        return v / self.lenght(v)
+vec3 = Vec3
+
+
 # Window
-width = 1024
-height = 512
+width = 800
+height = 600
 fps = 60
 
-#Map
-map_width = 16
-map_height = 16
-map_unit = 32
-
-prozor = pygame.display.set_mode((width,height))
 # Player variables
-x = 512
+x = 256
 y = 256
 dx = 0
 dy = 0
 player_height = 16
 player_width = 16
 player_speed = 3
-player_angle = 180
+player_angle = 270
 sensitivity = 6
 
-#Boje
+# Raytracing
+orig = vec3(0, 0, 0)
+dir = vec3(0, 0, 0)
+viewport_height = 2
+viewport_width = viewport_height * (width / height)
+focal_length = 1
+camera_center = vec3(0, 0, 0)
+viewport_u = vec3(viewport_width, 0, 0)
+viewport_v = vec3(0, -viewport_height, 0)
+pixel_delta_u = viewport_u / width
+pixel_delta_v = viewport_v / height
+viewport_upper_left = camera_center - vec3(0, 0, focal_length) - viewport_u/2 - viewport_v/2
+pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v)
+
+
+
+prozor = pygame.display.set_mode((width,height))
+
+
+
+# Boje
 WHITE = (255,255,255)
 BLACK = (0,0,0)
 RED = (255,0,0)
@@ -34,39 +105,72 @@ GREEN = (0,255,0)
 BLUE = (0,0,255)
 PURPLE = (100,10,100)
 YELLOW = (255, 255, 0)
- 
-def map(map_width, map_height, map_unit):
-    pos_x = 0
-    pos_y = 0
-    map = [
-        (1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
-        (1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1),
-        (1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1),
-        (1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1),
-        (1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1),
-        (1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1),
-        (1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1),
-        (1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1),
-        (1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1),
-        (1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1),
-        (1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1),
-        (1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1),
-        (1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1),
-        (1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1),
-        (1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1),
-        (1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
-    ]
 
-    for i in range(map_height):
-        for j in range(map_width):
-            if map[i][j] == 1:
-                pygame.draw.rect(prozor, BLUE, (pos_x, pos_y, map_unit, map_unit))
-            pos_x += map_unit
-        pos_y += map_unit
-        pos_x = 0
+
+
+
+
+class Ray():
+    def __init__(self, orig, dir):
+        
+        self.orig = orig
+        self.dir = dir
+        
+    def origin(self, orig):
+        return self.orig
+    def direction(self, dir):
+        return self.dir
+    def at(self, t):
+        return self.orig + dir * t
+rays = Ray(orig, dir)
+
+
+class Map():
+    def __init__(self, map_width, map_height, map_unit, pos_x, pos_y):
+        self.map_width = map_width
+        self.map_height = map_height
+        self.map_unit = map_unit
+        self.pos_x = pos_x
+        self.pos_y = pos_y
+        self.map = [
+            (1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+            (1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1),
+            (1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1),
+            (1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1),
+            (1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1),
+            (1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1),
+            (1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1),
+            (1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1),
+            (1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1),
+            (1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1),
+            (1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1),
+            (1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1),
+            (1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1),
+            (1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1),
+            (1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1),
+            (1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
+        ]
+
+    
+    def drawMap(self, prozor):
+        self.pos_y = 0
+        for i in range(self.map_height):
+            for j in range(self.map_width):
+                if self.map[i][j] == 1:
+                    pygame.draw.rect(prozor, BLUE, (self.pos_x, self.pos_y, self.map_unit, self.map_unit))
+                self.pos_x += self.map_unit
+            self.pos_y += self.map_unit
+            self.pos_x = 0
+
+
+    def collisions(map, dx, dy, x, y):
+        pass
+
+    
 
 
 def player_movement(player_speed, player_angle):
+    tasteri = pygame.key.get_pressed()
     dx = 0
     dy = 0
     if tasteri[pygame.K_w]:
@@ -75,13 +179,9 @@ def player_movement(player_speed, player_angle):
     if tasteri[pygame.K_s]:
         dx = player_speed * -math.sin(player_angle * math.pi/180)
         dy = player_speed * -math.cos(player_angle * math.pi/180)
-        player_angle += sensitivity
-        if player_angle >= 360:
-            player_angle = 0
     if tasteri[pygame.K_d]:
         dy = player_speed * math.sin(player_angle * math.pi/180)
         dx = player_speed * -math.cos(player_angle * math.pi/180)
-        
     if tasteri[pygame.K_a]:
         dy = player_speed * -math.sin(player_angle * math.pi/180)
         dx = player_speed * math.cos(player_angle * math.pi/180)
@@ -96,6 +196,13 @@ def player_movement(player_speed, player_angle):
             
     return dx, dy, player_angle
 
+# world_map = Map(16, 16, 32, 0, 0)
+
+def ray_color(r = Ray(orig, dir)):
+    unit_direction = vec3(vec3.unit_vector(rays.direction(dir)))
+    a = 0.5*(unit_direction.y() + 1.0)
+    return (1.0-a) * (1.0, 1.0, 1.0) + a * (0.5, 0.7, 1.0)
+
 
 
 
@@ -104,22 +211,29 @@ while radi:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             radi = False
-    
     prozor.fill(BLACK)
-    map(map_width, map_height, map_unit)
+    # world_map.drawMap(prozor)
+    for j in range(height):
+        for i in range(width):
+            pixel_center = pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v)
+            ray_direction = pixel_center - camera_center
+            r = Ray(camera_center, ray_direction)
+            pygame.draw.circle(prozor, ray_color(r), pixel_center, 1)
 
-    tasteri = pygame.key.get_pressed()
+
     dx, dy, player_angle = player_movement(player_speed, player_angle)
         
     x += dx
     y += dy
 
+    # collisions(map, dx, dy, x, y)
     
     pygame.draw.rect(prozor, YELLOW, (x, y, player_width, player_height))
     pygame.draw.line(prozor, RED, (x + player_width/2, y + player_height/2),
-                      ((math.sin(player_angle * math.pi / 180)*50 + x + player_width/2),
+                        ((math.sin(player_angle * math.pi / 180)*50 + x + player_width/2),
                         (math.cos(player_angle * math.pi / 180)*50 + y + player_height/2)), 2)
     pygame.display.update()
     pygame.time.delay(1000 // fps)
 
-pygame.quit()
+
+
