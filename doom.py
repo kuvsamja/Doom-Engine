@@ -156,6 +156,12 @@ class Map():
         ]
 
     
+class Cube():
+    def __init__(self, x_cube, y_cube, z_cube, width_cube, length_cube, height_cube):
+        pass
+    def collision():
+        pass
+
     def drawMap(self, prozor):
         self.pos_y = 0
         for i in range(self.map_height):
@@ -204,7 +210,7 @@ def player_movement(player_speed, player_angle):
 
 def ray_color(r):
     unit_direction = vec3.unit_vector(r.direction())
-    a = 0.5*(unit_direction.y() + 1.0)
+    a = 0.5*(unit_direction.y() + 1)
     color = (1 - a) * vec3(1, 0, 0) + a * vec3(0, 0, 1)
     return (int(255 * color.x()), int(255 * color.y()), int(255 * color.z()))
 
