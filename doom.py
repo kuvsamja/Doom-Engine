@@ -4,7 +4,7 @@ import math
 pygame.init()
 pygame.display.set_caption("doom")
 
-class Vec3():
+class Vec3():   # Vec3 -> vec3
     def __init__(self, x=0, y=0, z=0):
         self.e = [x, y, z]
     def x(self):    return self.e[0]
@@ -48,17 +48,16 @@ class Vec3():
         return vec3(self.e[0] * t, self.e[1] * t, self.e[2] * t)
     def __truediv__(self, t):
         return vec3(self.e[0] / t, self.e[1] / t, self.e[2] / t)
-    def dot(self, u, v):
+    def dot(u, v):
         return u.e[0]*v.e[0] + u.e[1]*v.e[1] + u.e[2]*v.e[2]
-    def cross(self, u, v):
+    def cross(u, v):
         return vec3(
             u.e[1] * v.e[2] - u.e[2] * v.e[1],
             u.e[2] * v.e[0] - u.e[0] * v.e[2],
             u.e[0] * v.e[1] - u.e[1] * v.e[0]
         )
-    def unit_vector(self, v):
+    def unit_vector(v):
         return v / self.lenght(v)
-vec3 = Vec3
 
 
 # Window
@@ -121,8 +120,7 @@ class Ray():
     def direction(self, dir):
         return self.dir
     def at(self, t):
-        return self.orig + dir * t
-rays = Ray(orig, dir)
+        return self.orig + dir * #skloniti
 
 
 class Map():
@@ -198,8 +196,8 @@ def player_movement(player_speed, player_angle):
 
 # world_map = Map(16, 16, 32, 0, 0)
 
-def ray_color(r = Ray(orig, dir)):
-    unit_direction = vec3(vec3.unit_vector(rays.direction(dir)))
+def ray_color(r):
+    unit_direction = vec3.unit_vector(r.direction()) 
     a = 0.5*(unit_direction.y() + 1.0)
     return (1.0-a) * (1.0, 1.0, 1.0) + a * (0.5, 0.7, 1.0)
 
