@@ -4,7 +4,7 @@ import math
 pygame.init()
 pygame.display.set_caption("doom")
 
-class Vec3():   # Vec3 -> vec3
+class vec3():
     def __init__(self, x=0, y=0, z=0):
         self.e = [x, y, z]
     def x(self):    return self.e[0]
@@ -37,13 +37,14 @@ class Vec3():   # Vec3 -> vec3
         self.e[2] /= t
         return self
     
-    def lenght(self):
-        return math.sqrt(self.x**2 + self.y**2 + self.z**2)
-    
+    def length(self):
+        return math.sqrt(self.e[0]**2 + self.e[1]**2 + self.e[2]**2)
+
     def __add__(self, v):
         return vec3(self.e[0] + v.e[0], self.e[1] + v.e[1], self.e[2] + v.e[2])
     def __sub__(self, v):
         return vec3(self.e[0] - v.e[0], self.e[1] - v.e[1], self.e[2] - v.e[2])
+    # NORMALAN MUL DA SE DODA
     def __rmul__(self, t):
         return vec3(self.e[0] * t, self.e[1] * t, self.e[2] * t)
     def __truediv__(self, t):
@@ -57,7 +58,7 @@ class Vec3():   # Vec3 -> vec3
             u.e[0] * v.e[1] - u.e[1] * v.e[0]
         )
     def unit_vector(v):
-        return v / self.lenght(v)
+        return v / v.length()
 
 
 # Window
@@ -79,14 +80,17 @@ sensitivity = 6
 # Raytracing
 orig = vec3(0, 0, 0)
 dir = vec3(0, 0, 0)
-viewport_height = 2
+viewport_height = height * 2
 viewport_width = viewport_height * (width / height)
 focal_length = 1
 camera_center = vec3(0, 0, 0)
+
 viewport_u = vec3(viewport_width, 0, 0)
 viewport_v = vec3(0, -viewport_height, 0)
+
 pixel_delta_u = viewport_u / width
 pixel_delta_v = viewport_v / height
+
 viewport_upper_left = camera_center - vec3(0, 0, focal_length) - viewport_u/2 - viewport_v/2
 pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v)
 
@@ -117,10 +121,10 @@ class Ray():
         
     def origin(self, orig):
         return self.orig
-    def direction(self, dir):
+    def direction(self):
         return self.dir
     def at(self, t):
-        return self.orig + dir * #skloniti
+        return self.orig + dir * t #skloniti
 
 
 class Map():
@@ -199,7 +203,8 @@ def player_movement(player_speed, player_angle):
 def ray_color(r):
     unit_direction = vec3.unit_vector(r.direction()) 
     a = 0.5*(unit_direction.y() + 1.0)
-    return (1.0-a) * (1.0, 1.0, 1.0) + a * (0.5, 0.7, 1.0)
+    color = (1 - a) * vec3(0, 1, 1) + a * vec3(1, 1, 0)
+    return (int(255 * color.x()), int(255 * color.y()), int(255 * color.z()))
 
 
 
@@ -213,10 +218,12 @@ while radi:
     # world_map.drawMap(prozor)
     for j in range(height):
         for i in range(width):
-            pixel_center = pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v)
+            pixel_center = pixel00_loc + i * pixel_delta_u + j * pixel_delta_v
             ray_direction = pixel_center - camera_center
             r = Ray(camera_center, ray_direction)
-            pygame.draw.circle(prozor, ray_color(r), pixel_center, 1)
+            # print((pixel_center.x()), (pixel_center.y()))
+            # print(pixel_center)
+            pygame.draw.circle(prozor, ray_color(r), ((pixel_center.x()), (pixel_center.y())), 1)
 
 
     dx, dy, player_angle = player_movement(player_speed, player_angle)
@@ -232,6 +239,5 @@ while radi:
                         (math.cos(player_angle * math.pi / 180)*50 + y + player_height/2)), 2)
     pygame.display.update()
     pygame.time.delay(1000 // fps)
-
 
 
